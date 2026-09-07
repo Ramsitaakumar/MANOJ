@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>मन एंड कम्पनी — एक्सप्रेस बाइक डिस्पैच</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --primary: #0f172a;
+      --accent: #25d366;
+      --page-bg: #e6f4fe; 
+      --card-bg: #ffffff;
+      --text: #0f172a;
+      --text-muted: #475569;
+      --gold: #f59e0b;
+      --road: #1e2530;
+      --border-blue: #cce7fc;
+      --error: #ef4444;
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      margin: 0;
+      padding: 24px 14px 44px;
+      font-family: 'Noto Sans Devanagari', sans-serif;
+      background: linear-gradient(180deg, #e6f4fe 0%, #d8efff 100%);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .main-container {
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    .dispatch-card {
+      background: var(--card-bg);
+      border-radius: 20px;
+      padding: 20px 18px 16px;
+      box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08), 0 2px 6px rgba(15, 23, 42, 0.04);
+      border: 1px solid var(--border-blue);
+      margin-bottom: 18px;
+    }
+
+    .card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .brand-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-circle {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: 900;
+      font-size: 22px;
+      box-shadow: 0 4px 10px rgba(217, 119, 6, 0.3);
+    }
+
+    .brand-titles h1 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 900;
+      color: #0f172a;
+      line-height: 1.2;
+    }
+
+    .brand-titles p {
+      margin: 2px 0 0;
+      font-size: 10.5px;
+      font-weight: 800;
+      letter-spacing: 0.6px;
+      color: #ea580c;
+      text-transform: uppercase;
+    }
+
+    .fare-quick {
+      text-align: right;
+    }
+
+    .fare-price {
+      font-size: 26px;
+      font-weight: 900;
+      color: #0284c7;
+      line-height: 1;
+    }
+
+    .fare-rate {
+      font-size: 11px;
+      font-weight: 700;
+      color: #64748b;
+      margin-top: 3px;
+    }
+
+    .road-track {
+      position: relative;
+      width: 100%;
+      height: 92px;
+      background: var(--road);
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: inset 0 4px 10px rgba(0,0,0,0.5);
+    }
+
+    .road-divider-yellow {
+      position: absolute;
+      top: 50%;
+      left: 0;
+      width: 100%;
+      height: 0;
+      border-bottom: 3.5px dashed #facc15;
+      transform: translateY(-50%);
+      opacity: 0.95;
+    }
+
+    .road-milestones {
+      position: absolute;
+      bottom: 6px;
+      left: 0;
+      width: 100%;
+      display: flex;
+      justify-content: space-around;
+      padding: 0 10px;
+      font-size: 10px;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.4);
+      font-family: monospace;
+      pointer-events: none;
+    }
+
+    .screen-bike {
+      position: absolute;
+      bottom: 23px;
+      left: -90px;
+      width: 80px;
+      height: 48px;
+      z-index: 2;
+      animation: roadRun 9s linear infinite;
+    }
+
+    @keyframes roadRun {
+      0% { left: -90px; transform: translateY(0); }
+      25% { transform: translateY(-2px); }
+      50% { transform: translateY(0); }
+      75% { transform: translateY(-2px); }
+      100% { left: calc(100% + 90px); transform: translateY(0); }
+    }
+
+    .rider-strip {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 10px 12px;
+      margin-top: 14px;
+    }
+
+    .rider-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .avatar-badge {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #cce7fc;
+      color: #0369a1;
+      font-size: 13px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .rider-meta h4 {
+      margin: 0;
+      font-size: 13.5px;
+      font-weight: 800;
+      color: #0f172a;
+    }
+
+    .rider-meta p {
+      margin: 2px 0 0;
+      font-size: 11px;
+      color: #64748b;
+      font-weight: 600;
+    }
+
+    .rating-pill {
+      background: #fef3c7;
+      color: #b45309;
+      font-size: 11.5px;
+      font-weight: 800;
+      padding: 4px 9px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .booking-card {
+      background: var(--card-bg);
+      border-radius: 20px;
+      padding: 22px 18px;
+      box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08), 0 2px 6px rgba(15, 23, 42, 0.04);
+      border: 1px solid var(--border-blue);
+    }
+
+    .form-group {
+      margin-bottom: 14px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      color: #334155;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 12px;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 10px;
+      font-size: 14.5px;
+      font-family: 'Noto Sans Devanagari', sans-serif;
+      outline: none;
+      background: #f8fafc;
+      color: #0f172a;
+      transition: all 0.2s;
+    }
+
+    .form-group input:focus {
+      border-color: #0284c7;
+      background: #fff;
+      box-shadow: 0 0 0 3.5px rgba(2, 132, 199, 0.12);
+    }
+
+    .field-error {
+      display: none;
+      font-size: 11.5px;
+      color: var(--error);
+      margin-top: 4px;
+      font-weight: 600;
+    }
+    .field-error.active { display: block; }
+
+    .row-2 {
+      display: flex;
+      gap: 10px;
+    }
+    .row-2 .form-group { flex: 1; min-width: 0; }
+
+    /* दूरी कंट्रोलर */
+    .dist-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #f0f9ff;
+      border: 1.5px solid #bae6fd;
+      border-radius: 12px;
+      padding: 10px 14px;
+      margin-bottom: 16px;
+    }
+
+    .dist-row span {
+      font-size: 13px;
+      font-weight: 700;
+      color: #0369a1;
+    }
+
+    .stepper {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .stepper button {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      border: 1px solid #7dd3fc;
+      background: #fff;
+      font-size: 18px;
+      font-weight: 800;
+      color: #0284c7;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s;
+    }
+    .stepper button:active { background: #e0f2fe; }
+
+    .stepper-val {
+      font-size: 15px;
+      font-weight: 800;
+      color: #0f172a;
+      min-width: 50px;
+      text-align: center;
+    }
+
+    .btn-whatsapp {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 15px;
+      border: none;
+      border-radius: 12px;
+      font-size: 15.5px;
+      font-weight: 800;
+      color: #fff;
+      background: linear-gradient(135deg, #25d366 0%, #128c7e 100%);
+      cursor: pointer;
+      box-shadow: 0 6px 18px rgba(37, 211, 102, 0.32);
+      font-family: 'Noto Sans Devanagari', sans-serif;
+      transition: transform 0.1s;
+    }
+
+    .btn-whatsapp:active { transform: scale(0.98); }
+
+    .driver-btn-link {
+      display: block;
+      text-align: center;
+      width: 100%;
+      background: none;
+      border: none;
+      color: #0369a1;
+      font-size: 12.5px;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: underline;
+      margin-top: 14px;
+      font-family: 'Noto Sans Devanagari', sans-serif;
+    }
+
+    .driver-panel {
+      display: none;
+      margin-top: 12px;
+      background: #fffbeb;
+      border: 1.5px solid #fde68a;
+      border-radius: 12px;
+      padding: 14px;
+    }
+    .driver-panel.active { display: block; }
+    .driver-panel h3 { margin: 0 0 8px; font-size: 13.5px; color: #92400e; }
+    .driver-panel textarea {
+      width: 100%;
+      padding: 9px;
+      border: 1.5px solid #fcd34d;
+      border-radius: 8px;
+      font-size: 13px;
+      font-family: 'Noto Sans Devanagari', sans-serif;
+      resize: vertical;
+      outline: none;
+      background: #fff;
+    }
+    .btn-confirm-send {
+      background: #15803d;
+      color: #fff;
+      border: none;
+      padding: 11px;
+      border-radius: 8px;
+      width: 100%;
+      font-weight: 700;
+      font-size: 13.5px;
+      cursor: pointer;
+      margin-top: 8px;
+      font-family: 'Noto Sans Devanagari', sans-serif;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="main-container">
+
+    <div class="dispatch-card">
+      <div class="card-head">
+        <div class="brand-left">
+          <div class="logo-circle">म</div>
+          <div class="brand-titles">
+            <h1>मन एंड कम्पनी</h1>
+            <p>EXPRESS LOGISTICS & BIKE DISPATCH</p>
+          </div>
+        </div>
+        <div class="fare-quick">
+          <div class="fare-price" id="topFare">₹100</div>
+          <div class="fare-rate" id="topRate">5 km @ ₹20/km</div>
+        </div>
+      </div>
+
+      <div class="road-track">
+        <div class="road-divider-yellow"></div>
+        
+        <svg class="screen-bike" viewBox="0 0 80 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <line x1="2" y1="36" x2="16" y2="36" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+          <line x1="8" y1="41" x2="22" y2="41" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round" opacity="0.8"/>
+          
+          <circle cx="28" cy="36" r="10" stroke="#94a3b8" stroke-width="3" fill="#0f172a"/>
+          <circle cx="28" cy="36" r="4" fill="#f59e0b"/>
+          <circle cx="68" cy="36" r="10" stroke="#94a3b8" stroke-width="3" fill="#0f172a"/>
+          <circle cx="68" cy="36" r="4" fill="#f59e0b"/>
+          
+          <path d="M28 36 L44 26 L58 26 L68 36" stroke="#f97316" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M44 26 L38 36 H56 L62 20" stroke="#ea580c" stroke-width="3" stroke-linecap="round"/>
+          
+          <rect x="18" y="14" width="18" height="18" rx="3" fill="#0284c7" stroke="#38bdf8" stroke-width="1.5"/>
+          <text x="27" y="27" font-size="11" font-weight="900" fill="#ffffff" text-anchor="middle" font-family="'Noto Sans Devanagari', sans-serif">म</text>
+          
+          <path d="M42 22 Q48 18 53 23 L59 28" stroke="#ea580c" stroke-width="4.5" stroke-linecap="round"/>
+          <circle cx="49" cy="13" r="6" fill="#fde047" stroke="#ca8a04" stroke-width="1"/>
+          <path d="M51 13 H55" stroke="#0f172a" stroke-width="2.5" stroke-linecap="round"/>
+          <line x1="62" y1="20" x2="58" y2="14" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/>
+        </svg>
+
+        <div class="road-milestones">
+          <span>1km</span>
+          <span>2km</span>
+          <span>3km</span>
+          <span>4km</span>
+          <span>5km</span>
+        </div>
+      </div>
+
+      <div class="rider-strip">
+        <div class="rider-info">
+          <div class="avatar-badge">RK</div>
+          <div class="rider-meta">
+            <h4>Rajesh Kumar</h4>
+            <p>Bajaj Pulsar • MH-12-AB-3456</p>
+          </div>
+        </div>
+        <div class="rating-pill">★ 4.9</div>
+      </div>
+    </div>
+
+    <div class="booking-card">
+      <div class="row-2">
+        <div class="form-group">
+          <label for="custName">👤 आपका नाम</label>
+          <input type="text" id="custName" placeholder="उदा. राहुल कुमार">
+        </div>
+        <div class="form-group">
+          <label for="custPhone">📱 मोबाइल नंबर *</label>
+          <input type="tel" id="custPhone" maxlength="10" placeholder="10 अंकों का नंबर">
+          <div class="field-error" id="phoneError">कृपया 10 अंकों का नंबर डालें।</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="pickup">📍 कहाँ से बैठना है? (पिकअप)</label>
+        <input type="text" id="pickup" placeholder="इलाक़ा / लैंडमार्क">
+      </div>
+
+      <div class="form-group">
+        <label for="drop">🏁 कहाँ तक जाना है? (ड्रॉप)</label>
+        <input type="text" id="drop" placeholder="गंतव्य स्थान">
+      </div>
+
+      <!-- दूरी कंट्रोलर (+ और - से 1 से 5 किमी के बीच भी किराया बदलेगा) -->
+      <div class="dist-row">
+        <span>📏 यात्रा की दूरी:</span>
+        <div class="stepper">
+          <button type="button" onclick="changeDist(-1)">−</button>
+          <div class="stepper-val" id="stepperVal">5 किमी</div>
+          <button type="button" onclick="changeDist(1)">+</button>
+        </div>
+      </div>
+
+      <div class="row-2">
+        <div class="form-group">
+          <label for="travelDate">📅 तारीख़</label>
+          <input type="date" id="travelDate">
+        </div>
+        <div class="form-group">
+          <label for="travelTime">⏰ समय</label>
+          <input type="time" id="travelTime">
+        </div>
+      </div>
+
+      <button onclick="sendBooking()" class="btn-whatsapp" type="button">
+        💬 WhatsApp पर तुरंत बाइक बुक करें
+      </button>
+
+      <button class="driver-btn-link" id="driverToggle" type="button">🔧 राइडर/ड्राइवर हैं? कन्फ़र्मेशन भेजें</button>
+      <div class="driver-panel" id="driverPanel">
+        <h3>✅ कस्टमर को कन्फ़र्मेशन भेजें</h3>
+        <div class="form-group">
+          <input type="tel" id="driverCustPhone" maxlength="10" placeholder="कस्टमर का नंबर">
+        </div>
+        <div class="form-group">
+          <textarea id="driverMsg" rows="3"></textarea>
+        </div>
+        <button class="btn-confirm-send" id="driverConfirmBtn" type="button">✅ WhatsApp पर भेजें</button>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const OWNER_PHONE = "9889486251";
+    const RATE_PER_KM = 20; // ₹20 प्रति किलोमीटर
+
+    let distanceKm = 5;
+    let totalFare = distanceKm * RATE_PER_KM; // 5 * 20 = ₹100
+
+    const custPhoneEl = document.getElementById('custPhone');
+    const phoneError = document.getElementById('phoneError');
+    const topFare = document.getElementById('topFare');
+    const topRate = document.getElementById('topRate');
+    const stepperVal = document.getElementById('stepperVal');
+
+    const today = new Date().toISOString().slice(0, 10);
+    document.getElementById('travelDate').value = today;
+    document.getElementById('travelDate').min = today;
+
+    const now = new Date(Date.now() + 20 * 60 * 1000);
+    document.getElementById('travelTime').value = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+    // दूरी बदलने पर सीधे ₹20 के हिसाब से किराया गणना (बिना ₹100 पर अटके)
+    function changeDist(val) {
+      distanceKm = Math.max(1, distanceKm + val); // न्यूनतम 1 किमी
+      totalFare = distanceKm * RATE_PER_KM;        // हर किमी पर ₹20 घटेगा/बढ़ेगा
+
+      stepperVal.textContent = `${distanceKm} किमी`;
+      topFare.textContent = `₹${totalFare}`;
+      topRate.textContent = `${distanceKm} km @ ₹20/km`;
+    }
+
+    custPhoneEl.addEventListener('input', () => {
+      custPhoneEl.value = custPhoneEl.value.replace(/\D/g, '').slice(0, 10);
+      const valid = custPhoneEl.value.length === 10;
+      phoneError.classList.toggle('active', custPhoneEl.value.length > 0 && !valid);
+    });
+
+    function openWhatsAppDirect(phoneNum, text) {
+      const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+      const encoded = encodeURIComponent(text);
+
+      if (isMobile) {
+        window.location.href = `whatsapp://send?phone=${phoneNum}&text=${encoded}`;
+      } else {
+        window.location.href = `https://web.whatsapp.com/send?phone=${phoneNum}&text=${encoded}`;
+      }
+    }
+
+    let lastBooking = null;
+
+    function sendBooking() {
+      const name = document.getElementById('custName').value.trim() || 'ग्राहक';
+      const phone = custPhoneEl.value.trim();
+      const pickup = document.getElementById('pickup').value.trim();
+      const drop = document.getElementById('drop').value.trim();
+      const date = document.getElementById('travelDate').value;
+      const time = document.getElementById('travelTime').value;
+
+      if (!/^\d{10}$/.test(phone)) {
+        phoneError.classList.add('active');
+        custPhoneEl.focus();
+        return;
+      }
+
+      if (!pickup || !drop) {
+        alert('कृपया पिकअप और ड्रॉप दोनों जगहें भरें।');
+        return;
+      }
+
+      const msg = 
+        `*नई बाइक बुकिंग — मन एंड कम्पनी*\n` +
+        `────────────────────\n` +
+        `नाम: ${name}\n` +
+        `नंबर: ${phone}\n` +
+        `────────────────────\n` +
+        `पिकअप: ${pickup}\n` +
+        `ड्रॉप: ${drop}\n` +
+        `दूरी: ${distanceKm} किमी\n` +
+        `किराया: ₹${totalFare}\n` +
+        `तारीख़: ${date}\n` +
+        `समय: ${time}\n` +
+        `────────────────────\n` +
+        `कृपया बाइक राइड कन्फ़र्म करें।`;
+
+      openWhatsAppDirect(`91${OWNER_PHONE}`, msg);
+      lastBooking = { name, phone, pickup, drop, fare: totalFare, time, date };
+    }
+
+    const driverToggle = document.getElementById('driverToggle');
+    const driverPanel = document.getElementById('driverPanel');
+    const driverCustPhone = document.getElementById('driverCustPhone');
+    const driverMsg = document.getElementById('driverMsg');
+    const driverConfirmBtn = document.getElementById('driverConfirmBtn');
+
+    driverToggle.addEventListener('click', () => {
+      const opening = !driverPanel.classList.contains('active');
+      driverPanel.classList.toggle('active');
+      if (opening && lastBooking) {
+        driverCustPhone.value = lastBooking.phone;
+        driverMsg.value = `नमस्ते ${lastBooking.name}, *मन एंड कम्पनी* की तरफ़ से आपकी बाइक राइड कन्फ़र्म हो गई है!\nपिकअप: ${lastBooking.pickup}\nसमय: ${lastBooking.time}\nकिराया: ₹${lastBooking.fare}\nराइडर समय पर पहुँच जाएगा। धन्यवाद!`;
+      }
+    });
+
+    driverConfirmBtn.addEventListener('click', () => {
+      const custNum = driverCustPhone.value.trim();
+      const msg = driverMsg.value.trim();
+
+      if (!/^\d{10}$/.test(custNum)) {
+        alert('कृपया सही 10 अंकों का नंबर डालें।');
+        return;
+      }
+      openWhatsAppDirect(`91${custNum}`, msg);
+    });
+  </script>
+
+</body>
+</html>
