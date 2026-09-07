@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>हाज़िरी रजिस्टर — फेस स्कैन (IN / OUT)</title>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1f3a52">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="हाज़िरी">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600;700&family=Noto+Serif+Devanagari:wght@500;600;700&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<script crossorigin="anonymous" src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
+
+<style>
+  :root {
+    --paper: #ece3ca;
+    --ink-blue: #1f3a52;
+    --ink-blue-light: #345a7a;
+    --rule-red: #a83a32;
+    --stamp-red: #a2352c;
+    --stamp-red-dark: #7c2822;
+    --text-main: #2a2620;
+    --text-faint: #7a7260;
+    --ok-green: #2f6b3f;
+    --out-orange: #b45309;
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--paper);
+    color: var(--text-main);
+    font-family: 'Noto Sans Devanagari', sans-serif;
+    min-height: 100%;
+    overscroll-behavior-y: contain;
+  }
+
+  body {
+    padding: max(20px, env(safe-area-inset-top)) 12px calc(env(safe-area-inset-bottom) + 30px);
+  }
+
+  .book {
+    max-width: 680px;
+    margin: 0 auto;
+    background: var(--paper);
+    background-image: repeating-linear-gradient(to bottom, transparent 0px, transparent 47px, rgba(31,58,82,0.14) 48px);
+    background-position: 0 115px;
+    position: relative;
+    border: 1px solid rgba(31,58,82,0.25);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.5) inset, 0 18px 40px -18px rgba(0,0,0,0.35);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .book::before {
+    content: ""; position: absolute; top: 0; bottom: 0; left: 40px; width: 2px;
+    background: var(--rule-red); opacity: 0.55;
+  }
+
+  header { padding: 20px 20px 10px 20px; display: flex; justify-content: space-between; align-items: flex-start; }
+  .eyebrow { font-family: 'Noto Serif Devanagari', serif; font-size: 13px; color: var(--text-faint); margin: 0 0 2px 0; }
+  h1 { font-family: 'Noto Serif Devanagari', serif; font-weight: 700; font-size: 24px; margin: 0 0 6px 0; color: var(--ink-blue); }
+
+  .status-line {
+    font-family: 'Courier Prime', monospace;
+    font-size: 12px;
+    color: var(--text-faint);
+    margin: 0;
+    min-height: 16px;
+  }
+  .status-line.ready { color: var(--ok-green); font-weight: bold; }
+
+  .date-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 6px 20px; }
+  .date-row label { font-size: 14px; color: var(--text-faint); }
+  input[type="date"] {
+    font-family: 'Courier Prime', monospace; font-size: 15px; background: transparent; border: none;
+    border-bottom: 1.5px solid var(--ink-blue-light); padding: 4px 2px; color: var(--ink-blue); outline: none;
+  }
+  .summary { margin-left: auto; font-family: 'Courier Prime', monospace; font-size: 13px; color: var(--text-faint); font-weight: 600; }
+
+  /* टेबल हेडर */
+  .table-head {
+    display: flex; align-items: center; padding: 8px 20px; gap: 8px;
+    border-bottom: 1.5px solid rgba(31,58,82,0.3); font-size: 12px; color: var(--text-faint);
+    font-weight: 600; text-transform: uppercase;
+  }
+  .th-sr { width: 22px; text-align: right; }
+  .th-name { flex: 1; padding-left: 12px; }
+  .th-time { width: 68px; text-align: center; }
+  .th-action { width: 44px; text-align: center; }
+
+  .rows { padding: 4px 20px; }
+  .row { display: flex; align-items: center; min-height: 48px; gap: 8px; border-bottom: 1px dashed rgba(31,58,82,0.1); }
+  .row .sr { font-family: 'Courier Prime', monospace; font-size: 13px; color: var(--text-faint); width: 22px; text-align: right; flex-shrink: 0; }
+  .row .name { flex: 1; font-size: 15px; color: var(--text-main); padding-left: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .row .name .tag { display: block; font-size: 10px; color: var(--text-faint); font-family: 'Courier Prime', monospace; }
+  
+  .time-badge {
+    width: 68px; text-align: center; font-family: 'Courier Prime', monospace; font-size: 11px;
+    padding: 3px 0; border-radius: 4px; flex-shrink: 0;
+  }
+  .time-badge.in { color: var(--ok-green); background: rgba(47,107,63,0.1); font-weight: bold; }
+  .time-badge.out { color: var(--out-orange); background: rgba(180,83,9,0.1); font-weight: bold; }
+  .time-badge.empty { color: var(--text-faint); opacity: 0.4; }
+
+  .stamp-btn {
+    flex-shrink: 0; width: 34px; height: 34px; border-radius: 50%;
+    border: 1.5px solid var(--ink-blue-light); background: transparent;
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+  }
+  .stamp-btn.present { border-color: var(--ok-green); background: rgba(47,107,63,0.15); color: var(--ok-green); }
+  .remove-x { flex-shrink: 0; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; color: var(--text-faint); cursor: pointer; font-size: 13px; margin-left: 4px; }
+  .remove-x:hover { color: var(--stamp-red); }
+
+  .empty { padding: 30px 20px; text-align: center; color: var(--text-faint); font-size: 14px; }
+
+  .actions { display: flex; gap: 10px; padding: 16px 20px; }
+  .actions button {
+    flex: 1; font-family: 'Noto Sans Devanagari', sans-serif; font-size: 14px; font-weight: 600;
+    padding: 12px 10px; border: none; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  #openAddBtn { background: transparent; border: 1.5px solid var(--ink-blue); color: var(--ink-blue); }
+  #openScanBtn { background: var(--ink-blue); color: var(--paper); }
+  .actions button:disabled { opacity: 0.45; }
+
+  .footer-note { text-align: center; font-size: 11.5px; color: var(--text-faint); margin-top: 12px; max-width: 680px; margin-left: auto; margin-right: auto; line-height: 1.5; }
+
+  /* Modals */
+  .modal-backdrop {
+    display: none; position: fixed; inset: 0; background: rgba(20,20,15,0.78);
+    z-index: 50; align-items: flex-end; justify-content: center;
+  }
+  .modal-backdrop.open { display: flex; }
+  .modal {
+    background: var(--paper); width: 100%; max-width: 680px; border-radius: 16px 16px 0 0;
+    padding: 18px 18px calc(env(safe-area-inset-bottom) + 18px); max-height: 94vh; overflow-y: auto;
+  }
+  .modal h2 { font-family: 'Noto Serif Devanagari', serif; font-size: 19px; color: var(--ink-blue); margin: 0 0 10px 0; }
+  .modal .close-x { float: right; font-size: 22px; color: var(--text-faint); cursor: pointer; }
+
+  .cam-wrap { position: relative; width: 100%; aspect-ratio: 4/3; background: #000; border-radius: 10px; overflow: hidden; margin-bottom: 12px; }
+  .cam-wrap video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+  .cam-wrap canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+  .cam-hint {
+    position: absolute; bottom: 8px; left: 8px; right: 8px; text-align: center;
+    font-size: 13px; color: #fff; background: rgba(0,0,0,0.65); padding: 7px 10px; border-radius: 6px;
+  }
+
+  .modal input[type="text"] {
+    width: 100%; font-family: 'Noto Sans Devanagari', sans-serif; font-size: 15px; padding: 11px 12px;
+    border: 1px solid rgba(31,58,82,0.3); border-radius: 6px; background: rgba(255,255,255,0.7); color: var(--text-main); outline: none; margin-bottom: 10px;
+  }
+  .modal-btn-row { display: flex; gap: 10px; }
+  .modal-btn-row button {
+    flex: 1; font-family: 'Noto Sans Devanagari', sans-serif; font-size: 14px; font-weight: 600;
+    padding: 12px 10px; border: none; border-radius: 6px; cursor: pointer;
+  }
+  .btn-primary { background: var(--ink-blue); color: var(--paper); }
+  .btn-secondary { background: transparent; border: 1.5px solid var(--ink-blue-light); color: var(--ink-blue); }
+  .modal-btn-row button:disabled { opacity: 0.45; }
+
+  .scan-log { margin-top: 10px; max-height: 130px; overflow-y: auto; }
+  .scan-log-item {
+    font-size: 13px; padding: 7px 10px; border-radius: 6px; margin-bottom: 6px;
+    background: rgba(47,107,63,0.12); color: var(--ok-green); font-weight: 500;
+  }
+  .scan-log-item.out { background: rgba(180,83,9,0.12); color: var(--out-orange); }
+  .scan-log-item.dup { background: rgba(122,114,96,0.12); color: var(--text-faint); }
+</style>
+</head>
+<body>
+
+<div class="book">
+  <header>
+    <div>
+      <p class="eyebrow">स्मार्ट हाज़िरी प्रणाली</p>
+      <h1>हाज़िरी रजिस्टर</h1>
+      <p class="status-line" id="modelStatus">चेहरा-पहचान AI लोड हो रहा है…</p>
+    </div>
+    <button id="installBtn" style="display:none;padding:6px 12px;background:var(--stamp-red);color:#fff;border:none;border-radius:20px;font-size:12px;cursor:pointer;">📲 ऐप इंस्टॉल करें</button>
+  </header>
+
+  <div class="date-row">
+    <label for="dateInput">तारीख़:</label>
+    <input type="date" id="dateInput">
+    <span class="summary" id="summaryText"></span>
+  </div>
+
+  <div class="table-head">
+    <span class="th-sr">क्र.</span>
+    <span class="th-name">नाम</span>
+    <span class="th-time">आना (IN)</span>
+    <span class="th-time">जाना (OUT)</span>
+    <span class="th-action"></span>
+  </div>
+
+  <div class="rows" id="rowsContainer"></div>
+
+  <div class="actions">
+    <button id="openAddBtn" disabled>➕ नया व्यक्ति जोड़ें (एक बार)</button>
+    <button id="openScanBtn" disabled>📷 कैमरा चालू करें (IN / OUT)</button>
+  </div>
+</div>
+
+<p class="footer-note">नोट: व्यक्ति को सिर्फ़ एक बार जोड़ना है। पहली बार आने पर <b>IN</b> और दोबारा आने पर ऑटोमैटिक <b>OUT</b> मार्क होगा। सारा डेटा सिर्फ़ आपके इसी डिवाइस पर रहता है।</p>
+
+<!-- Modal: नया व्यक्ति जोड़ना -->
+<div class="modal-backdrop" id="addModal">
+  <div class="modal">
+    <span class="close-x" data-close="addModal">✕</span>
+    <h2>नया चेहरा रजिस्टर करें</h2>
+    <div class="cam-wrap">
+      <video id="addVideo" autoplay playsinline muted></video>
+      <div class="cam-hint" id="addHint">चेहरा कैमरे के सामने रखें</div>
+    </div>
+    <input type="text" id="addNameInput" placeholder="व्यक्ति का नाम लिखें…" maxlength="40">
+    <div class="modal-btn-row">
+      <button class="btn-secondary" id="captureBtn">चेहरा स्कैन करें</button>
+      <button class="btn-primary" id="saveAddBtn" disabled>हमेशा के लिए सेव करें</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: हाज़िरी स्कैन (IN/OUT) -->
+<div class="modal-backdrop" id="scanModal">
+  <div class="modal">
+    <span class="close-x" data-close="scanModal">✕</span>
+    <h2>फेस स्कैनर (आना / जाना)</h2>
+    <div class="cam-wrap">
+      <video id="scanVideo" autoplay playsinline muted></video>
+      <canvas id="scanCanvas"></canvas>
+      <div class="cam-hint" id="scanHint">कैमरे के सामने चेहरा लाएं…</div>
+    </div>
+    <div class="scan-log" id="scanLog"></div>
+    <div class="modal-btn-row" style="margin-top:10px;">
+      <button class="btn-primary" data-close="scanModal">बंद करें</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const STORE_KEY = 'attendance_register_app_v2';
+const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model';
+const MATCH_THRESHOLD = 0.55;
+const COOLDOWN_MS = 2 * 60 * 1000; // 2 मिनट का कूलडाउन ताकि लगातार IN/OUT न हो
+
+let state = { people: [], records: {} };
+let modelsReady = false;
+let capturedDescriptor = null;
+let addStream = null, scanStream = null;
+let scanTimer = null;
+
+function todayStr() {
+  const d = new Date();
+  const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+  return local.toISOString().slice(0, 10);
+}
+
+function fmtTime(iso) {
+  if (!iso) return '-';
+  const d = new Date(iso);
+  let h = d.getHours(), m = d.getMinutes();
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  h = h % 12 || 12;
+  return `${h}:${String(m).padStart(2, '0')} ${ampm}`;
+}
+
+function currentDate() {
+  return document.getElementById('dateInput').value || todayStr();
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    if (raw) {
+      state = JSON.parse(raw);
+      if (!state.people) state.people = [];
+      if (!state.records) state.records = {};
+    }
+  } catch (e) {}
+}
+
+function saveState() {
+  try {
+    localStorage.setItem(STORE_KEY, JSON.stringify(state));
+  } catch (e) {
+    console.error('सेव करने में समस्या:', e);
+  }
+}
+
+function euclideanDistance(a, b) {
+  let sum = 0;
+  for (let i = 0; i < a.length; i++) sum += (a[i] - b[i]) * (a[i] - b[i]);
+  return Math.sqrt(sum);
+}
+
+function findBestMatch(descriptor) {
+  let best = null, bestDist = Infinity;
+  for (const p of state.people) {
+    if (!p.descriptor) continue;
+    const dist = euclideanDistance(descriptor, p.descriptor);
+    if (dist < bestDist) { bestDist = dist; best = p; }
+  }
+  return (best && bestDist < MATCH_THRESHOLD) ? best : null;
+}
+
+// टेबल रेंडर
+function render() {
+  const date = currentDate();
+  const container = document.getElementById('rowsContainer');
+  container.innerHTML = '';
+
+  if (state.people.length === 0) {
+    container.innerHTML = '<div class="empty">अभी कोई व्यक्ति नहीं जुड़ा है। नीचे बटन दबाकर जोड़ें।</div>';
+    document.getElementById('summaryText').textContent = '';
+    return;
+  }
+
+  const dayRecords = state.records[date] || {};
+  let presentCount = 0;
+
+  state.people.forEach((person, idx) => {
+    const rec = dayRecords[person.id] || null;
+    const inTime = rec ? rec.inTime : null;
+    const outTime = rec ? rec.outTime : null;
+    if (inTime) presentCount++;
+
+    const row = document.createElement('div');
+    row.className = 'row';
+    row.innerHTML = `
+      <span class="sr">${idx + 1}.</span>
+      <span class="name">${person.name}</span>
+      <span class="time-badge ${inTime ? 'in' : 'empty'}">${inTime ? fmtTime(inTime) : '—'}</span>
+      <span class="time-badge ${outTime ? 'out' : 'empty'}">${outTime ? fmtTime(outTime) : '—'}</span>
+      <span class="remove-x" data-remove="${person.id}" title="हटाएं">✕</span>
+    `;
+    container.appendChild(row);
+  });
+
+  document.getElementById('summaryText').textContent = `${presentCount} / ${state.people.length} हाज़िर`;
+}
+
+// हाज़िरी प्रोसेस (IN vs OUT)
+function processAttendance(person) {
+  const date = currentDate();
+  if (!state.records[date]) state.records[date] = {};
+  
+  const now = new Date();
+  const nowIso = now.toISOString();
+  const currentRecord = state.records[date][person.id];
+
+  // 1. पहली बार आया -> IN मार्क करें
+  if (!currentRecord || !currentRecord.inTime) {
+    state.records[date][person.id] = { inTime: nowIso, outTime: null, lastScanTime: nowIso };
+    saveState();
+    render();
+    addLogEntry(person.name, 'in', fmtTime(nowIso));
+    return;
+  }
+
+  // 2. कूलडाउन चेक (ताकि एक ही समय पर गलती से IN और OUT दोनों न लग जाएं)
+  const lastScan = new Date(currentRecord.lastScanTime || currentRecord.inTime);
+  const diffMinutes = (now - lastScan) / (1000 * 60);
+
+  if (diffMinutes < 2) {
+    addLogEntry(person.name, 'wait', 'अभी-अभी स्कैन हुआ है');
+    return;
+  }
+
+  // 3. 2 मिनट के बाद दोबारा आया -> OUT मार्क/अपडेट करें
+  state.records[date][person.id].outTime = nowIso;
+  state.records[date][person.id].lastScanTime = nowIso;
+  saveState();
+  render();
+  addLogEntry(person.name, 'out', fmtTime(nowIso));
+}
+
+function addLogEntry(name, type, timeStr) {
+  const log = document.getElementById('scanLog');
+  const div = document.createElement('div');
+  if (type === 'in') {
+    div.className = 'scan-log-item';
+    div.textContent = `🟢 ${name} — IN दर्ज हुआ (${timeStr})`;
+  } else if (type === 'out') {
+    div.className = 'scan-log-item out';
+    div.textContent = `🟠 ${name} — OUT दर्ज हुआ (${timeStr})`;
+  } else {
+    div.className = 'scan-log-item dup';
+    div.textContent = `⏳ ${name} — ${timeStr}`;
+  }
+  log.prepend(div);
+}
+
+// मॉडल लोडिंग
+async function loadModels() {
+  const statusEl = document.getElementById('modelStatus');
+  try {
+    await Promise.all([
+      faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+      faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+      faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
+    ]);
+    modelsReady = true;
+    statusEl.textContent = 'AI मॉडल तैयार है ✓';
+    statusEl.classList.add('ready');
+    document.getElementById('openAddBtn').disabled = false;
+    document.getElementById('openScanBtn').disabled = false;
+  } catch (e) {
+    statusEl.textContent = 'मॉडल लोड नहीं हो सका (इंटरनेट चेक करें)';
+  }
+}
+
+// कैमरा फंक्शन्स
+async function startCamera(videoEl) {
+  const stream = await navigator.mediaDevices.getUserMedia({
+    video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }
+  });
+  videoEl.srcObject = stream;
+  await new Promise((res) => { videoEl.onloadedmetadata = () => res(); });
+  return stream;
+}
+
+function stopCamera(stream) {
+  if (stream) stream.getTracks().forEach(t => t.stop());
+}
+
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+  if (id === 'addModal') {
+    stopCamera(addStream); addStream = null;
+    capturedDescriptor = null;
+    document.getElementById('addNameInput').value = '';
+    document.getElementById('saveAddBtn').disabled = true;
+    document.getElementById('addHint').textContent = 'चेहरा कैमरे के सामने रखें';
+  }
+  if (id === 'scanModal') {
+    stopCamera(scanStream); scanStream = null;
+    if (scanTimer) { clearInterval(scanTimer); scanTimer = null; }
+    document.getElementById('scanLog').innerHTML = '';
+  }
+}
+
+// इवेंट्स
+document.getElementById('openAddBtn').addEventListener('click', async () => {
+  openModal('addModal');
+  try {
+    addStream = await startCamera(document.getElementById('addVideo'));
+  } catch (e) {
+    document.getElementById('addHint').textContent = 'कैमरा शुरू नहीं हुआ!';
+  }
+});
+
+document.getElementById('captureBtn').addEventListener('click', async () => {
+  if (!modelsReady) return;
+  const video = document.getElementById('addVideo');
+  const hint = document.getElementById('addHint');
+  hint.textContent = 'स्कैन हो रहा है…';
+  
+  const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
+    .withFaceLandmarks().withFaceDescriptor();
+
+  if (!detection) {
+    hint.textContent = '❌ चेहरा साफ़ नहीं दिखा, कृपया दोबारा देखें';
+    return;
+  }
+
+  capturedDescriptor = Array.from(detection.descriptor);
+  hint.textContent = '✅ चेहरा स्कैन हो गया! अब नाम लिखकर सेव करें';
+  document.getElementById('saveAddBtn').disabled = document.getElementById('addNameInput').value.trim() === '';
+});
+
+document.getElementById('addNameInput').addEventListener('input', (e) => {
+  const hasName = e.target.value.trim() !== '';
+  document.getElementById('saveAddBtn').disabled = !(hasName && capturedDescriptor);
+});
+
+document.getElementById('saveAddBtn').addEventListener('click', () => {
+  const name = document.getElementById('addNameInput').value.trim();
+  if (!name || !capturedDescriptor) return;
+
+  const id = 'p_' + Date.now();
+  state.people.push({ id, name, descriptor: capturedDescriptor });
+  saveState();
+  render();
+  closeModal('addModal');
+  alert(`"${name}" का डेटा सेव हो गया है। अब रोज़ाना सीधे चेहरे से हाज़िरी लगेगी।`);
+});
+
+// स्कैनिंग (IN / OUT ऑटोमैटिक)
+document.getElementById('openScanBtn').addEventListener('click', async () => {
+  openModal('scanModal');
+  const video = document.getElementById('scanVideo');
+  const canvas = document.getElementById('scanCanvas');
+
+  try {
+    scanStream = await startCamera(video);
+  } catch (e) {
+    document.getElementById('scanHint').textContent = 'कैमरा शुरू नहीं हुआ!';
+    return;
+  }
+
+  scanTimer = setInterval(async () => {
+    if (!modelsReady || video.videoWidth === 0) return;
+    
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+
+    const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions())
+      .withFaceLandmarks().withFaceDescriptors();
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    if (detections.length === 0) {
+      document.getElementById('scanHint').textContent = 'चेहरा ढूंढ रहे हैं…';
+      return;
+    }
+
+    detections.forEach((det) => {
+      const match = findBestMatch(Array.from(det.descriptor));
+      const box = det.detection.box;
+
+      // कैनवास बॉक्स
+      ctx.save();
+      ctx.translate(canvas.width, 0);
+      ctx.scale(-1, 1); // मिरर वीडियो के अनुसार अलाइन करने के लिए
+      ctx.strokeStyle = match ? '#2f6b3f' : '#a2352c';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(box.x, box.y, box.width, box.height);
+      ctx.restore();
+
+      if (match) {
+        processAttendance(match);
+      }
+    });
+
+    document.getElementById('scanHint').textContent = `${detections.length} चेहरा सामने है`;
+  }, 1000);
+});
+
+// डिलीट और मोडल क्लोज़ हैंडलर
+document.addEventListener('click', (e) => {
+  const rem = e.target.closest('[data-remove]');
+  if (rem && confirm('क्या आप इस व्यक्ति का डेटा हमेशा के लिए हटाना चाहते हैं?')) {
+    const pId = rem.dataset.remove;
+    state.people = state.people.filter(p => p.id !== pId);
+    Object.values(state.records).forEach(r => delete r[pId]);
+    saveState();
+    render();
+  }
+
+  const closeEl = e.target.closest('[data-close]');
+  if (closeEl) closeModal(closeEl.dataset.close);
+});
+
+document.getElementById('dateInput').addEventListener('change', render);
+
+// इनिशियलाइज़
+document.getElementById('dateInput').value = todayStr();
+loadState();
+render();
+loadModels();
+
+// PWA Install
+let deferredPrompt;
+const installBtn = document.getElementById('installBtn');
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  installBtn.style.display = 'inline-block';
+});
+installBtn.addEventListener('click', async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  installBtn.style.display = 'none';
+});
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
+}
+</script>
+</body>
+</html>े
